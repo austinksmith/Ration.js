@@ -33,13 +33,13 @@ const rationjs = (req, res, next) => {
  	} else {
  		for (var i = visits.length - 1; i >= 0; i--) {
 	 		/* Check for existing request record, compare time interval between requests */
-	 		if(visits[i]['requestBy'] === requestRecord['requestBy']) {
+	 		if(visits[i].requestBy === requestRecord.requestBy) {
 	 			requestRecordFound = true;
 	 			/* Increment visit count for this visitor */
- 				visits[i]['requestCount'] += 1;
+ 				visits[i].requestCount += 1;
  				/* Compare time frame between visits */
-	 			let lastRequestAt = visits[i]['lastRequestAt'];
-	 			let newRequestAt = requestRecord['newRequestAt'];
+	 			let lastRequestAt = visits[i].lastRequestAt;
+	 			let newRequestAt = requestRecord.newRequestAt;
 	 			let requestInterval = (newRequestAt - lastRequestAt);
 	 			/* Compare time frame between visits */
 	 			if(requestInterval <= 1000) {
@@ -54,10 +54,10 @@ const rationjs = (req, res, next) => {
 	 				visits[i].requestCount = 1;
 	 			}
 	 			/* Set lastRequest to this request */
-	 			visits[i]['lastRequest'] = requestRecord['newRequestAt'];
+	 			visits[i].lastRequest = requestRecord.newRequestAt;
 	 		} else {
  				/* Check for and remove request records if interval is greater than removeRecodAfter */
- 				let timeSinceLastVisit = (requestRecord['newRequestAt'] - visits[i]['lastRequestAt']);
+ 				let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
  				if(timeSinceLastVisit >= removeRecordAfter) {
  					visits.splice(i, 1);
  				}
