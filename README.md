@@ -14,6 +14,21 @@
 
 # Install
 
+  * Add Ration.js to your project using the instructions below
 
+  ## Node
 
+  * Use npm install to add the project to your dependencies `npm install --save ration`
+  * Require the npm module in your app.js file
 
+  ```js
+ 	  const ration = require('ration.js');
+  ```
+
+  ## Then make sure your app is set to use ration with the following
+
+  ```js
+    app.use(rationjs);
+  ``` 
+
+ 
