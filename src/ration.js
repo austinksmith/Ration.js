@@ -20,48 +20,48 @@ let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove 
 let delayMultiplier = 1;
 
 const compareVisits = (requestRecord, visits) => {
- 	for (var i = visits.length - 1; i >= 0; i--) {
- 		if(visits[i].requestBy === requestRecord.requestBy) {
- 			let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
-			if(timeSinceLastVisit >= removeRecordAfter) {
-				visits.splice(i, 1);
-			} else {
-				visits[i].requestCount += 1;
-				delayMultiplier = visits[i].delayMultiplier;
-				if(timeSinceLastVisit <= timeFrameThresholdInMS && visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
-	 				delayMultiplier += 1;
-	 			}
-	 			visits[i].lastRequestAt = requestRecord.newRequestAt;
-	 			visits[i].delayMultiplier = delayMultiplier;
-			}
- 		} else if(i === 0) {
- 			visits.push(requestRecord);
-		}
- 	}
+  for (var i = visits.length - 1; i >= 0; i--) {
+    if(visits[i].requestBy === requestRecord.requestBy) {
+      let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
+      if(timeSinceLastVisit >= removeRecordAfter) {
+        visits.splice(i, 1);
+      } else {
+        visits[i].requestCount += 1;
+        delayMultiplier = visits[i].delayMultiplier;
+        if(timeSinceLastVisit <= timeFrameThresholdInMS && visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
+          delayMultiplier += 1;
+        }
+        visits[i].lastRequestAt = requestRecord.newRequestAt;
+        visits[i].delayMultiplier = delayMultiplier;
+      }
+    } else if(i === 0) {
+      visits.push(requestRecord);
+    }
+  }
 };
 
 const rationjs = (req, res, next) => {
-	'use strict';
+  'use strict';
 
-	delayMultiplier = 1;
+  delayMultiplier = 1;
 
- 	let requestRecord = {
- 		requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
- 		newRequestAt: Date.now(),
- 		lastRequestAt: Date.now(),
- 		delayMultiplier: 1,
- 		requestCount: 1
- 	};
+  let requestRecord = {
+    requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
+    newRequestAt: Date.now(),
+    lastRequestAt: Date.now(),
+    delayMultiplier: 1,
+    requestCount: 1
+  };
 
- 	if(visits.length === 0) {
- 		visits.push(requestRecord);
- 	} else {
- 		compareVisits(requestRecord, visits);
- 	}
- 	//Delay processing request
- 	setTimeout(() => {
- 		next();
- 	}, (delayInMS * delayMultiplier));
+  if(visits.length === 0) {
+    visits.push(requestRecord);
+  } else {
+    compareVisits(requestRecord, visits);
+  }
+  //Delay processing request
+  setTimeout(() => {
+    next();
+  }, (delayInMS * delayMultiplier));
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
