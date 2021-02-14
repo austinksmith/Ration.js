@@ -18,7 +18,7 @@ Ration.js is 100% Vanilla Javascript Rate Limiting / DDOS Protection Library for
 
   ## Node
 
-  * Use npm install to add the project to your dependencies `npm install --save ration`
+  * Use npm install to add the project to your dependencies `npm install --save ration.js`
   * Require the npm module in your app.js file
 
   ```js
