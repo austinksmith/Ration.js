@@ -30,6 +30,8 @@ const compareVisits = (requestRecord, visits) => {
         delayMultiplier = visits[i].delayMultiplier;
         if(timeSinceLastVisit <= timeFrameThresholdInMS && visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
           delayMultiplier += 1;
+        } else {
+          visits[i].requestCount = 1;
         }
         visits[i].lastRequestAt = requestRecord.newRequestAt;
         visits[i].delayMultiplier = delayMultiplier;
