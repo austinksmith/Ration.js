@@ -12,13 +12,37 @@
 
 let visits = [];
 let maxPerSecond = 20;
+let timeFrameThresholdInMS = (30 * 1000);
 let delayInMS = (1000 / maxPerSecond);
 let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove the record
+let delayMultiplier = 1;
+
+const compareVisits = (requestRecord, visits) => {
+ 	for (var i = visits.length - 1; i >= 0; i--) {
+ 		if(visits[i].requestBy === requestRecord.requestBy) {
+ 			let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
+			if(timeSinceLastVisit >= removeRecordAfter) {
+				visits.splice(i, 1);
+			} else {
+				visits[i].requestCount += 1;
+				delayMultiplier = visits[i].delayMultiplier;
+				if(requestInterval <= timeFrameThresholdInMS && visits[i].requestCount >= maxPerSecond) {
+	 				delayMultiplier += 1;
+	 			}
+	 			visits[i].lastRequestAt = requestRecord.newRequestAt;
+	 			visits[i].delayMultiplier = delayMultiplier;
+			}
+ 		} else if(i === 0) {
+ 			visits.push(requestRecord);
+		}
+ 	}
+};
 
 const rationjs = (req, res, next) => {
 	'use strict';
 
-	let requestRecordFound = false;
+	delayMultiplier = 1;
+
  	let requestRecord = {
  		requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
  		newRequestAt: Date.now(),
@@ -30,47 +54,12 @@ const rationjs = (req, res, next) => {
  	if(visits.length === 0) {
  		visits.push(requestRecord);
  	} else {
- 		for (var i = visits.length - 1; i >= 0; i--) {
-	 		/* Check for existing request record, compare time interval between requests */
-	 		if(visits[i].requestBy === requestRecord.requestBy) {
-	 			requestRecordFound = true;
-	 			/* Increment visit count for this visitor */
- 				visits[i].requestCount += 1;
- 				/* Compare time frame between visits */
-	 			let requestInterval = (requestRecord.newRequestAt - visits[i].lastRequestAt);
-	 			/* Compare time frame between visits */
-	 			console.log(requestInterval, visits[i].lastRequestAt);
-	 			if(requestInterval <= 1000) {
-	 				/* This visitor is exceeding the maximum visits per second, increase delay between requests */
-	 				if(visits[i].requestCount >= maxPerSecond) {
-	 					visits[i].delayMultiplier += 1;
-	 					requestRecord.delayMultiplier = visits[i].delayMultiplier;
-	 				}
-	 			} else {
-	 				/* This visitor is not exceeding the maximum visits per second, reset delays and request count */
-	 				visits[i].delayMultiplier = 1;
-	 				visits[i].requestCount = 1;
-	 			}
-	 			/* Set lastRequest to this request */
-	 			visits[i].lastRequest = requestRecord.newRequestAt;
-	 		} else {
- 				/* Check for and remove request records if interval is greater than removeRecodAfter */
- 				let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
- 				if(timeSinceLastVisit >= removeRecordAfter) {
- 					visits.splice(i, 1);
- 				}
- 				/* There isn't an existing requestRecord for this visitor, add it to visits array */
- 				if(i === 1 && !requestRecordFound) {
-		 			visits.push(requestRecord);
-	 			}
- 			}
-	 	}
+ 		compareVisits(requestRecord, visits);
  	}
- 	console.log(visits, requestRecord.delayMultiplier);
  	//Delay processing request
  	setTimeout(() => {
  		next();
- 	}, (delayInMS * requestRecord.delayMultiplier));
+ 	}, (delayInMS * delayMultiplier));
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
