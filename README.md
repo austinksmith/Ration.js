@@ -10,7 +10,7 @@
 
 # About
 
-Ration.js is 100% Vanilla Javascript Rate Limiting / DDOS Protection Library for use with Node.js / Express, inspired by [Network Tarpits](https://en.wikipedia.org/wiki/Tarpit_(networking) it works the same way to intentionally slow down requests from users who are making too many requests within a given time threshold.
+Ration.js is 100% Vanilla Javascript Rate Limiting / DDOS Protection Library for use with Node.js / Express, inspired by [Network Tarpits](https://en.wikipedia.org/wiki/Tarpit_(networking)) it works the same way to intentionally slow down requests from users who are making too many requests within a given time threshold.
 
 # Install
 
