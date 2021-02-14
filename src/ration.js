@@ -20,7 +20,8 @@ let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove 
 let delayMultiplier = 1;
 
 const compareVisits = (requestRecord, visits) => {
-  for (var i = visits.length - 1; i >= 0; i--) {
+  let i = (visits.length - 1);
+  for (i; i >= 0; i--) {
     if(visits[i].requestBy === requestRecord.requestBy) {
       let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
       if(timeSinceLastVisit >= removeRecordAfter) {
