@@ -18,7 +18,6 @@ let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove 
 const rationjs = (req, res, next) => {
 	'use strict';
 
-
 	let requestRecordFound = false;
  	let requestRecord = {
  		requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
@@ -38,10 +37,9 @@ const rationjs = (req, res, next) => {
 	 			/* Increment visit count for this visitor */
  				visits[i].requestCount += 1;
  				/* Compare time frame between visits */
-	 			let lastRequestAt = visits[i].lastRequestAt;
-	 			let newRequestAt = requestRecord.newRequestAt;
-	 			let requestInterval = (newRequestAt - lastRequestAt);
+	 			let requestInterval = (requestRecord.newRequestAt - visits[i].lastRequestAt);
 	 			/* Compare time frame between visits */
+	 			console.log(requestInterval, visits[i].lastRequestAt);
 	 			if(requestInterval <= 1000) {
 	 				/* This visitor is exceeding the maximum visits per second, increase delay between requests */
 	 				if(visits[i].requestCount >= maxPerSecond) {
@@ -68,6 +66,7 @@ const rationjs = (req, res, next) => {
  			}
 	 	}
  	}
+ 	console.log(visits, requestRecord.delayMultiplier);
  	//Delay processing request
  	setTimeout(() => {
  		next();
