@@ -11,9 +11,11 @@
 
 
 let visits = [];
-let maxPerSecond = 20;
-let timeFrameThresholdInMS = (30 * 1000);
-let delayInMS = (1000 / maxPerSecond);
+let maxRequestsPerSecond = 20;
+let timeFrameThresholdInSeconds = 30;
+let timeFrameThresholdInMS = (timeFrameThresholdInSeconds * 1000);
+let maxRequestsWithinTimeFrameThreshold = (maxRequestsPerSecond * timeFrameThresholdInSeconds);
+let delayInMS = (1000 / maxRequestsPerSecond);
 let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove the record
 let delayMultiplier = 1;
 
@@ -26,7 +28,7 @@ const compareVisits = (requestRecord, visits) => {
 			} else {
 				visits[i].requestCount += 1;
 				delayMultiplier = visits[i].delayMultiplier;
-				if(requestInterval <= timeFrameThresholdInMS && visits[i].requestCount >= maxPerSecond) {
+				if(timeSinceLastVisit <= timeFrameThresholdInMS && visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
 	 				delayMultiplier += 1;
 	 			}
 	 			visits[i].lastRequestAt = requestRecord.newRequestAt;
