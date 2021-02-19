@@ -9,63 +9,78 @@
 * License: Artistic License 2.0                                                    *
 ***********************************************************************************/
 
+'use strict';
 
-let visits = [];
-let maxRequestsPerSecond = 20;
-let timeFrameThresholdInSeconds = 30;
-let timeFrameThresholdInMS = (timeFrameThresholdInSeconds * 1000);
-let maxRequestsWithinTimeFrameThreshold = (maxRequestsPerSecond * timeFrameThresholdInSeconds);
-let delayInMS = (1000 / maxRequestsPerSecond);
-let removeRecordAfter = (1000 * 60 * 5); //If no visits after 5 minutes, remove the record
-let delayMultiplier = 1;
+class ration {
 
-const compareVisits = (requestRecord, visits) => {
-  let i = (visits.length - 1);
-  for (i; i >= 0; i--) {
-    if(visits[i].requestBy === requestRecord.requestBy) {
-      let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
-      if(timeSinceLastVisit >= removeRecordAfter) {
-        visits.splice(i, 1);
-      } else {
-        visits[i].requestCount += 1;
-        delayMultiplier = visits[i].delayMultiplier;
-        if(timeSinceLastVisit > timeFrameThresholdInMS) {
-          visits[i].requestCount = 1;
-        } else if(visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
-          delayMultiplier += 1;
-        }
-        visits[i].lastRequestAt = requestRecord.newRequestAt;
-        visits[i].delayMultiplier = delayMultiplier;
-      }
-    } else if(i === 0) {
-      visits.push(requestRecord);
-    }
+  /**
+  * @constructor
+  * @function constructor - Sets properties for this class
+  */
+  constructor() {
+    this.init = this.setRations;
+    this.checkRations = this.compareVisits
+    this.saveUsersRations = this.saveRequest;
+    this.visits = [];
+    this.maxRequestsPerTimeFrame = 600;
+    this.timeFrameThresholdInSeconds = 30;
+    this.timeFrameThresholdInMS = (this.timeFrameThresholdInSeconds * 1000);
+    this.maxRequestsWithinTimeFrameThreshold = (this.maxRequestsPerTimeFrame * this.timeFrameThresholdInSeconds);
+    this.delayInMS = (1000 / this.maxRequestsPerTimeFrame);
+    this.removeRecordAfter = (1000 * 60 * 5);
+    this.delayMultiplier = 1;
   }
-};
 
-const rationjs = (req, res, next) => {
-  'use strict';
 
-  delayMultiplier = 1;
+  setRations(options) {
 
-  let requestRecord = {
-    requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
-    newRequestAt: Date.now(),
-    lastRequestAt: Date.now(),
-    delayMultiplier: 1,
-    requestCount: 1
+  }
+
+  compareVisits(requestRecord, visits) {
+    let i = (visits.length - 1);
+    for (i; i >= 0; i--) {
+      if(visits[i].requestBy === requestRecord.requestBy) {
+        let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
+        if(timeSinceLastVisit >= removeRecordAfter) {
+          visits.splice(i, 1);
+        } else {
+          visits[i].requestCount += 1;
+          delayMultiplier = visits[i].delayMultiplier;
+          if(timeSinceLastVisit > timeFrameThresholdInMS) {
+            visits[i].requestCount = 1;
+          } else if(visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
+            delayMultiplier += 1;
+          }
+          visits[i].lastRequestAt = requestRecord.newRequestAt;
+          visits[i].delayMultiplier = delayMultiplier;
+        }
+      } else if(i === 0) {
+        visits.push(requestRecord);
+      }
+    }
   };
 
-  if(visits.length === 0) {
-    visits.push(requestRecord);
-  } else {
-    compareVisits(requestRecord, visits);
-  }
-  //Delay processing request
-  setTimeout(() => {
-    next();
-  }, (delayInMS * delayMultiplier));
-};
+  rationjs(req, res, next) {
+    let requestRecord = {
+      requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
+      newRequestAt: Date.now(),
+      lastRequestAt: Date.now(),
+      delayMultiplier: this.delayMultiplier,
+      requestCount: 1
+    };
+
+    if(visits.length === 0) {
+      visits.push(requestRecord);
+    } else {
+      compareVisits(requestRecord, visits);
+    }
+    //Delay processing request
+    setTimeout(() => {
+      next();
+    }, (delayInMS * delayMultiplier));
+  };
+
+}
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
   module.exports = rationjs;
