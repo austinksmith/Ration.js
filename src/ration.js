@@ -18,69 +18,82 @@ class ration {
   * @function constructor - Sets properties for this class
   */
   constructor() {
-    this.init = this.setRations;
+    this.setRations = this.init;
+    this.startRations = this.enforceRations.bind(this);
     this.checkRations = this.compareVisits
     this.saveUsersRations = this.saveRequest;
-    this.visits = [];
-    this.maxRequestsPerTimeFrame = 600;
-    this.timeFrameThresholdInSeconds = 30;
-    this.timeFrameThresholdInMS = (this.timeFrameThresholdInSeconds * 1000);
-    this.maxRequestsWithinTimeFrameThreshold = (this.maxRequestsPerTimeFrame * this.timeFrameThresholdInSeconds);
+  }
+
+
+  init(options) {
+    this.removeRecordsAfter = (1000 * 60 * 5);
+    for(var key in options) {
+      this[key] = options[key];
+    }
+    this.timeFrameInMS = (this.timeFrameInSeconds * 1000);
+    this.maxRequestsWithinTimeFrame = (this.maxRequestsPerTimeFrame * this.timeFrameInSeconds);
     this.delayInMS = (1000 / this.maxRequestsPerTimeFrame);
-    this.removeRecordAfter = (1000 * 60 * 5);
-    this.delayMultiplier = 1;
+    this.visits = [];
+    setInterval(() => {
+      this.restoreRations();
+    }, this.removeRecordsAfter);
   }
 
 
-  setRations(options) {
-
-  }
-
-  compareVisits(requestRecord, visits) {
-    let i = (visits.length - 1);
-    for (i; i >= 0; i--) {
-      if(visits[i].requestBy === requestRecord.requestBy) {
-        let timeSinceLastVisit = (requestRecord.newRequestAt - visits[i].lastRequestAt);
-        if(timeSinceLastVisit >= removeRecordAfter) {
-          visits.splice(i, 1);
-        } else {
-          visits[i].requestCount += 1;
-          delayMultiplier = visits[i].delayMultiplier;
-          if(timeSinceLastVisit > timeFrameThresholdInMS) {
-            visits[i].requestCount = 1;
-          } else if(visits[i].requestCount >= maxRequestsWithinTimeFrameThreshold) {
-            delayMultiplier += 1;
-          }
-          visits[i].lastRequestAt = requestRecord.newRequestAt;
-          visits[i].delayMultiplier = delayMultiplier;
-        }
-      } else if(i === 0) {
-        visits.push(requestRecord);
+  restoreRations() {
+    for (var i = this.visits.length - 1; i >= 0; i--) {
+      let timeSinceLastVisit = (Date.now() - this.visits[i].lastRequestAt);
+      if(timeSinceLastVisit >= this.removeRecordsAfter) {
+        this.visits.splice(i, 1);
       }
     }
-  };
+  }
 
-  rationjs(req, res, next) {
-    let requestRecord = {
-      requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
-      newRequestAt: Date.now(),
-      lastRequestAt: Date.now(),
-      delayMultiplier: this.delayMultiplier,
-      requestCount: 1
-    };
-
-    if(visits.length === 0) {
-      visits.push(requestRecord);
-    } else {
-      compareVisits(requestRecord, visits);
+  compareVisits(requestRecord, next) {
+    let sameRequestor;
+    let timeSinceLastVisit;
+    let delayMultiplier;
+    for (var i = this.visits.length - 1; i >= 0; i--) {
+      sameRequestor = (this.visits[i].requestBy === requestRecord.requestBy);
+      if(sameRequestor && (timeSinceLastVisit < this.removeRecordsAfter)) {
+        this.visits[i].requestCount += 1;
+        delayMultiplier = this.visits[i].delayMultiplier;
+        if(this.visits[i].requestCount >= maxRequestsWithinTimeFrame) {
+          delayMultiplier += 1;
+        }
+        this.visits[i].lastRequestAt = requestRecord.newRequestAt;
+        this.visits[i].delayMultiplier = delayMultiplier;
+      } else if(timeSinceLastVisit > this.timeFrameInMS) {
+        this.visits[i].requestCount = 1;
+        this.visits[i].delayMultiplier = 1;
+      }
     }
     //Delay processing request
     setTimeout(() => {
       next();
-    }, (delayInMS * delayMultiplier));
-  };
+    }, (this.delayInMS * delayMultiplier));
+  }
+
+  enforceRations(req, res, next) {
+    let requestRecord = {
+      requestBy: (req.header('x-forwarded-for') || req.connection.remoteAddress),
+      newRequestAt: Date.now(),
+      lastRequestAt: Date.now(),
+      delayMultiplier: 1,
+      requestCount: 1
+    };
+    // Compare existing request records
+    if(this.visits.length === 0) {
+      this.visits.push(requestRecord);
+      next();
+    } else {
+      this.compareVisits(requestRecord, next);
+    }
+  }
 
 }
+
+const rationjs = new ration();
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
   module.exports = rationjs;
