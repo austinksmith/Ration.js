@@ -24,7 +24,9 @@
     "hardening",
     "ddos",
     "spam protection",
-    "performance"
+    "performance",
+    "tarpit",
+    "network tarpitting"
   ],
   "bugs": {
     "url": "https://github.com/austinksmith/Ration.js/issues"
