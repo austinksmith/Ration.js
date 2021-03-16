@@ -20,8 +20,12 @@ class ration {
   constructor() {
     this.setRations = this.init;
     this.startRations = this.enforceRations.bind(this);
-    this.checkRations = this.compareVisits
+    this.checkRations = this.compareVisits;
     this.saveUsersRations = this.saveRequest;
+    this.maxRequestsPerTimeFrame = 600;
+    this.timeFrameInSeconds = 30;
+    this.removeRecordsAfter = (1000 * 60 * 5);
+    this.dropConnections = false;
   }
 
 
@@ -31,14 +35,16 @@ class ration {
       this[key] = options[key];
     }
     this.timeFrameInMS = (this.timeFrameInSeconds * 1000);
-    this.maxRequestsWithinTimeFrame = (this.maxRequestsPerTimeFrame * this.timeFrameInSeconds);
     this.delayInMS = (1000 / this.maxRequestsPerTimeFrame);
     this.visits = [];
-    setInterval(() => {
-      this.restoreRations();
-    }, this.removeRecordsAfter);
+    this.setRestoreRationsInterval(this.removeRecordsAfter);
   }
 
+  setRestoreRationsInterval(removeRecordsAfter) {
+    setInterval(() => {
+      this.restoreRations();
+    }, removeRecordsAfter);
+  }
 
   restoreRations() {
     for (var i = this.visits.length - 1; i >= 0; i--) {
@@ -49,29 +55,41 @@ class ration {
     }
   }
 
-  compareVisits(requestRecord, next) {
+  compareVisits(requestRecord, res, next) {
     let sameRequestor;
     let timeSinceLastVisit;
     let delayMultiplier;
     for (var i = this.visits.length - 1; i >= 0; i--) {
       sameRequestor = (this.visits[i].requestBy === requestRecord.requestBy);
-      if(sameRequestor && (timeSinceLastVisit < this.removeRecordsAfter)) {
-        this.visits[i].requestCount += 1;
+      if(sameRequestor) {
+        timeSinceLastVisit = (requestRecord.newRequestAt - this.visits[i].lastRequestAt);
         delayMultiplier = this.visits[i].delayMultiplier;
-        if(this.visits[i].requestCount >= maxRequestsWithinTimeFrame) {
-          delayMultiplier += 1;
+        if(timeSinceLastVisit < this.timeFrameInMS) {
+          this.visits[i].requestCount += 1;
+          if(this.visits[i].requestCount >= this.maxRequestsWithinTimeFrame) {
+            delayMultiplier += 1;
+          }
+          this.visits[i].lastRequestAt = requestRecord.newRequestAt;
+          this.visits[i].delayMultiplier = delayMultiplier;
+        } else {
+          this.visits[i].requestCount = 1;
+          this.visits[i].delayMultiplier = 1;
         }
-        this.visits[i].lastRequestAt = requestRecord.newRequestAt;
-        this.visits[i].delayMultiplier = delayMultiplier;
-      } else if(timeSinceLastVisit > this.timeFrameInMS) {
-        this.visits[i].requestCount = 1;
-        this.visits[i].delayMultiplier = 1;
       }
     }
-    //Delay processing request
-    setTimeout(() => {
-      next();
-    }, (this.delayInMS * delayMultiplier));
+    this.processRequest(delayMultiplier, res, next);
+  }
+
+  processRequest(delayMultiplier, res, next) {
+    if(this.dropConnections && delayMultiplier !== 1) {
+      //Drop this connection, don't bother queuing it for processing
+      res.end();
+    } else {
+      //Delay processing request
+      setTimeout(() => {
+        next();
+      }, (this.delayInMS * delayMultiplier));
+    }
   }
 
   enforceRations(req, res, next) {
@@ -87,7 +105,7 @@ class ration {
       this.visits.push(requestRecord);
       next();
     } else {
-      this.compareVisits(requestRecord, next);
+      this.compareVisits(requestRecord, res, next);
     }
   }
 

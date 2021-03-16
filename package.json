@@ -2,8 +2,8 @@
   "name": "ration.js",
   "author": "Austin K Smith",
   "description": "100% Vanilla Javascript Rate Limiting / DDOS Protection Library",
-  "homepage": "http://github.com/austinksmith/",
-  "version": "2.0.0",
+  "homepage": "https://github.com/austinksmith/Ration.js",
+  "version": "2.1.0",
   "main": "build/ration.node.min.js",
   "scripts": {
     "build": "rm -rf ./build && webpack --config ./ration.webpack.config.js --display-error-details",
@@ -14,7 +14,18 @@
     "type": "git",
     "url": "git+https://github.com/austinksmith/Ration.js.git"
   },
-  "keywords": [],
+  "keywords": [
+    "security",
+    "ddos",
+    "ddos protection",
+    "request limit",
+    "rate limit",
+    "load balancing",
+    "hardening",
+    "ddos",
+    "spam protection",
+    "performance"
+  ],
   "bugs": {
     "url": "https://github.com/austinksmith/Ration.js/issues"
   },

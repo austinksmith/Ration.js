@@ -35,7 +35,8 @@ Ration.js is 100% Vanilla Javascript Rate Limiting / DDOS Protection Library for
   const rations = {
     maxRequestsPerTimeFrame: 600,
     timeFrameInSeconds: 30,
-    removeRecordsAfter: (1000 * 60 * 5)
+    removeRecordsAfter: (1000 * 60 * 5),
+    dropConnections: false
   };
 
   /* Initialize Ration.js */
@@ -50,6 +51,7 @@ Ration.js is 100% Vanilla Javascript Rate Limiting / DDOS Protection Library for
   * maxRequestsPerTimeFrame - This is the maximum number of requests you want to allow an application user to use within the set timeframe. Value should be an Integer - Defaults to 600.
   * timeFrameInSeconds - This is the time frame you want to limit the number of requests within eg. Use 1 to limit requests by individual seconds - Defaults to 30 
   * removeRecordsAfter - This is the amount of time since the requestors last request that the requestors records are kept in memory - milliseconds - Defaults to 30000 (ie. 5 minutes).
+  * dropConnections - This new option changes how the library operates to forcabily drop connections from users who have exceeded their rations instead of processing requests with a delay
 
  # How it works
 
